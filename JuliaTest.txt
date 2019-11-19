@@ -1,0 +1,1233 @@
+	解释器安装
+请默认安装JuliaPro1.2.
+有时会调用Python，请下载对应系统的Python解释器。
+安装完成后，安装pkg时需要注册Julia账号。且每次安装包时会更新提示登录，下载token.toml文件到C:\Users\用户名\.juliapro\下，才能正常安装包。
+请在https://github.com上注册一个号，Julia几乎所有代码都在这上面，除此之外，上面有你想要的所有代码。
+Julia使用git安装库会非常慢，经常出现卡死状态，请设置国内镜像，设置方法如下：
+(v1.2) pkg> add PkgMirrors
+julia> import PkgMirrors
+julia> PkgMirrors.availables()
+	2-element Array{String,1}:
+ 	"ZJU" 
+ 	"USTC"
+julia> PkgMirrors.setmirror("ZJU")
+julia> import PkgMirrors
+(v1.2) pkg> update
+请注意以上在不同模式下，每次重启解释器，import PkgMirrors一下。
+	安装那些包
+Gadfly—绘图显示
+Plots—绘图显示
+PyPlot—绘图显示
+JuMP—优化算法（Pkg.add("JuMP")）
+SeismicJulia相关包
+LinearAlgebra—线性代数库
+add https://github.com/VMLS-book/VMLS.jl —斯坦福大学线性代数库
+
+
+Using PyPloy
+Pygui(:true)
+x=rand(100)
+PyPlot.plot(x)
+PyPlot.show()
+加此两句后为弹出绘图
+如果要使用@sprintf宏格式化需要using Printf
+Using Plots
+在绘图语句后加！表示在原绘图对象上追加绘图，多个图像绘制在一张图。如：
+Using Plots
+Plots.plot(rx,ry)
+Plots.plot!(sx,sy)
+PyPlot.scatter！(sx, sy, markersize = 1, legend =false);
+PyPlot.scatter!(rx, ry, markersize = 1, legend =false);
+Using Gadfly
+对x[],y[]在一张图上同时画散点图和折线图的语句为
+Gadfly.plot(x=x,y=y,Geom.point,Geom.line)
+
+
+unique函数为去除数组的重复元素，对于浮点数组，可以按精度去重：
+unique(round.(x,digits=5))#按5位有效精度去重
+
+
+Julia1,2读取CSV文件：
+using CSV
+data = CSV.read("Loc.csv",delim=',',datarow=1)  #从第1行开始读取
+x,y,t = data[:,1],data[:,2],data[:,3]
+
+using DelimitedFiles
+readdlm("loc.csv", ',')   # readdlm("loc.csv", ',', Float64)
+
+using DataFrames
+data = DataFrames.readtable("loc.csv",separator = ',',header=false)
+读取文本文件
+using DelimitedFiles
+using Plots
+x = collect(1:1:48)
+y = 0.5.*x.+rand()
+s1 = readlines("E:\\JuliaStudy\\test3.txt")
+open("E:\\JuliaStudy\\test1.txt", "w") do io
+        # writedlm(io, [x y])#默认\t分割
+         writedlm(io, [x y],',') #逗号分割
+        # for i = 1:length(x)
+        #     writedlm( io,[x[i] y[i]] )
+        # end
+    end
+display(Plots.plot(x,y))
+# 直接用数组读取
+a = readdlm("E:\\JuliaStudy\\test1.txt",',')# 数据之间用英文逗号隔开，注意readdlm中是单引号
+a = readdlm("123.txt")  # 读取用空格分割的数据
+println(a)
+for i in 1:size(a,1)
+println(a[i,1]," ",a[i,2])
+#     println(a[i,:])
+ end
+ println("======================================")
+# 用循环读取
+n = 13
+a = zeros(n);
+b = zeros(n);
+io = open("E:\\JuliaStudy\\test3.txt","r")
+for i in 1:n
+    str = readline(io)
+    str = split(str)
+    # str = split(str," ")  # 用一个空格分割数据
+    a[i] = parse(Float64,str[3]);
+    b[i] = parse(Float64,str[4]);
+    println(a[i],"  ",b[i])
+end
+close(io)
+println("======================================")
+
+	其他
+using LinearAlgebra
+
+在开始讲解之前，我们先建立一个简单的线性系统：
+A = rand(3,3)
+x = fill(1, (3,1))
+b = A * x
+
+**Factorizations:**
+1. LU分解
+PA = LU
+此处P为置换矩阵，L是下三角矩阵（对角线元素为1），U是上三角矩阵
+julia使用函数lufact可以获得矩阵A,L,U
+Alu = lu(A)   也可使用   Alu =factorize(A)
+也可以查看Alu的type：typeof(Alu)
+
+查看矩阵P
+P = Alu.P
+L = Alu.L
+U = Alu.U
+
+例如我们可以使用LU分解矩阵求解原线性系统
+A\b的值与Alu\b的值相同
+det(A)约等于det(Alu)
+
+2. QR分解
+A = QR. 此处Q是酉矩阵/正交矩阵
+Aqr = qr(A)
+Q = Aqr.Q
+R = Aqr.R
+
+3. 特征值分解: Eigendecompositions
+Asym = copy(A)
+AsymEig = eigvals(Asym)  特征值？
+eigvecs(A)      特征向量？
+https://cn.julialang.org/JuliaZH.jl/latest/stdlib/LinearAlgebra/#LinearAlgebra.eigen!
+
+# 这里要注意一下：inv(AsymEig)*Asym = I
+
+4. 特殊矩阵构造
+在线性代数中，矩阵构造非常重要。
+n = 1000
+A = randn(n,n)  # randn:生成正太随机数，均值为0，标准差为1.
+Asym = A +A'  # A+A'是对称矩阵
+issymmetric(Asym)  # 返回值true  是否对称
+
+但有时会产生浮点错误
+Asym_noisy = copy(Asym)
+Asym_noisy[1,2] += eps()
+issymmetric(Asym_noisy)  # 返回值false
+
+我们还可以显式地声明下面地矩阵：Diagonal(对角矩阵)，Symmetric(对称矩阵)，Hermitian(埃尔米特矩阵)
+Tridiagonal(三对角矩阵)，SymTridiagonal(对称三角矩阵)[SymTridiagonal只能作用于对称矩阵]
+n = 6
+A = randn(n,n)
+B = Symmetric(A)
+B = Hermitian(A)
+B = Tridiagonal(A)
+B = SymTridiagonal(A+A')
+
+# 接下来我们看一下求解Asym矩阵和Asym_noisy矩阵特征值的时间
+@time eigvals(Asym); eigmax(Asym)  # 求取最大特征值
+@time eigvals(Asym_noisy);
+LowerTriangular(A)  # 返回矩阵A的下三角矩阵
+UpperTriangular(A)  # 返回矩阵A的上三角矩阵
+Diagonal(A)  # 返回矩阵A的对角矩阵
+
+# 这里注意一下，求取特征值和特征向量有两种方法
+eigvals(A) = eigfact(A)[:values]
+eigvecs(A) = eigfact(A)[:vectors]
+
+x - 2y + 2z = 5
+x - y + 2z = 7
+-x + y + z = 5
+julia> A = [1 -2 2; 1 -1 2; -1 1 1];
+3x3 Array{Int64,2}:
+julia> b = [5, 7, 5];
+3-element Array{Int64,1};
+julia> v = A\b ; # or inv(A)*b
+3-element Array{Float64,1}:
+1.0
+2.0
+4.0
+矩阵求逆
+11.1矩阵左逆或右逆矩阵
+julia> A = [-3 -4; 4 6; 1 1] 
+3×2 Array{Int64,2}: 
+-3 -4 
+4 6 
+1 1 
+julia> B = [-11 -10 16; 7 8 -11]/9 # A left inverse of A 
+2×3 Array{Float64,2}: 
+-1.22222 -1.11111 1.77778 
+0.777778 0.888889 -1.22222 
+julia> C = [0 -1 6; 0 1 -4]/2 # Another left inverse of A 
+2×3 Array{Float64,2}: 
+0.0 -0.5 3.0 
+0.0 0.5 -2.0 
+julia> # Let’s check 
+julia> B*A 
+2×2 Array{Float64,2}: 
+1.0 0.0 
+-4.44089e-16 1.0 
+julia> C*A 
+2×2 Array{Float64,2}: 
+1.0 0.0 
+0.0 1.0
+11.2逆矩阵
+如果是可逆的,它的逆矩阵是由inv(A)(也可以是A^-1)。如果不是可逆的,你会得到一个错误,或者不相等提示。
+julia> A = [1 -2 3; 0 2 2; -4 -4 -4] 
+3×3 Array{Int64,2}: 
+1 -2 3 
+0 2 2 
+-4 -4 -4 
+julia> B = inv(A) 
+3×3 Array{Float64,2}: 
+0.0 -0.5 -0.25 
+-0.2 0.2 -0.05 
+0.2 0.3 0.05 
+julia> B*A 
+3×3 Array{Float64,2}: 
+1.0 0.0 0.0 
+0.0 1.0 2.77556e-17 
+0.0 5.55112e-17 1.0 
+julia> A*B 
+3×3 Array{Float64,2}: 
+1.0 1.11022e-16 0.0 
+5.55112e-17 1.0 1.38778e-17 
+-1.11022e-16 -2.22045e-16 1.0
+
+ 
+julia> A = [ 1 0 1; 4 -3 -4; 1 -1 -2] 
+3×3 Array{Int64,2}: 
+1 0 1 
+4 -3 -4 
+1 -1 -2 
+julia> B = inv(A) 
+3×3 Array{Float64,2}: 
+2.0 -1.0 3.0 
+4.0 -3.0 8.0 
+-1.0 1.0 -3.0
+julia> x = [ 0.2, -0.3, 1.2] 
+3-element Array{Float64,1}: 
+0.2 
+-0.3 
+1.2 
+julia> rhs = (B[1,:]'*x) * A[:,1] + (B[2,:]'*x) * A[:,2] + B[3,:]'*x) * A[:,3] 
+3-element Array{Float64,1}: 
+0.2 
+-0.3 
+1.2
+
+通过QR分解求逆矩阵：
+A = QR ? A?1 = R?1QT.
+julia> A = randn(3,3); 
+julia> inv(A) 
+3×3 Array{Float64,2}: 
+-0.321679 0.323945 -0.347063 
+-1.0735 -5.03083 -3.24503 
+-1.17582 -2.68161 -1.8496 
+julia> Q, R = qr(A); 
+julia> Q = Matrix(Q); 
+julia> inv(R)*Q' 
+3×3 Array{Float64,2}: 
+-0.321679 0.323945 -0.347063 
+-1.0735 -5.03083 -3.24503 
+-1.17582 -2.68161 -1.8496
+
+11.3解线性方程
+线性方程
+Ax = b
+则解为x=A\b.它的速度比x=inv(A)*b要快。
+julia> n = 5000; 
+julia> A = randn(n,n); b = randn(n); # random set of equations julia> @time x1 = A\b; 
+1.422173 seconds (14 allocations: 190.812 MiB, 0.73% gc time) 
+julia> norm(b-A*x1) 
+3.8666263141510634e-9 
+julia> @time x2 = inv(A)*b; 
+4.550091 seconds (21 allocations: 384.026 MiB, 1.66% gc time) 
+julia> norm(b-A*x2) 
+1.682485195063787e-8
+
+Julia在检查A的性质后会选择一个合适的算法求解方程，例如，如果a是下三角形，它将使用反替换。这就解释了以下实验结果的运行时间。
+julia> n = 5000; 
+julia> b = randn(n); 
+julia> A = tril(randn(n,n)); # random lower triangular matrix
+julia> @time x = A\b; 
+0.042580 seconds (7 allocations: 39.313 KiB) 
+julia> A = randn(n,n); # random square matrix 
+julia> @time x = A\b; 
+1.289663 seconds (14 allocations: 190.812 MiB, 0.91% gc time) 
+julia> n = 10000; 
+julia> b = randn(n); 
+julia> A = tril(randn(n,n)); # random lower triangular matrix 
+julia> @time x = A\b; 
+0.157043 seconds (7 allocations: 78.375 KiB) 
+julia> A = randn(n,n); # random square matrix 
+julia> @time x = A\b; 
+9.008604 seconds (14 allocations: 763.093 MiB, 0.41% gc time)
+当我们将大小从n=5000加倍到n=10000时，三角方程的求解时间从0.04秒增加到0.16秒。这是一个四的因素，与后替换的N2复杂性一致。对于一般的平方系统，解的时间从1.23秒增加到9.01秒，即，大约为八的因子，正如我们所期望的，给定N3复杂度。
+多个右手边的因子求解方法。一个线性方程通过首先分解a，然后用a的因子求解几个简单的方程，这被称为因子求解方案。一个重要的应用是求解具有相同系数矩阵和不同右手边的多个线性方程组。
+julia> n = 5000; 
+julia> A = randn(n,n); B = randn(n,2); 
+julia> # Solve with right-hand side B[:,1] 
+julia> @time x1 = A \ B[:,1]; 
+1.501368 seconds (17 allocations: 190.850 MiB, 0.79% gc time) 
+julia> # Solve with right-hand side B[:,2] 
+julia> @time x2 = A \ B[:,2]; 
+1.388827 seconds (17 allocations: 190.850 MiB, 0.81% gc time) 
+julia> # Naive approach for solving A*X = B 
+julia> @time X = [ A\B[:,1] A\B[:,2] ]; 
+2.617617 seconds (35 allocations: 381.776 MiB, 3.19% gc time) 
+julia> # Factor-solve approach 
+julia> @time X = A \ B; 
+1.418451 seconds (83.37 k allocations: 194.881 MiB, 0.58% gc time)
+因子求解法确定两个右手边的解与一个右手边的解大致相同。Na_ve方法的求解时间是一个右手边的两倍。
+
+11.4 例子
+多项式插值。我们计算vmls图11.1中的插值多项式。下面的代码使用vmls包中的函数vandermonde和linspace。（函数linspace（a，b，n）返回在区间[a，b]中具有n个等距数字的向量）结果如图11.1所示。
+julia> t = [ -1.1, -0.4, 0.2, 0.8 ]; 
+julia> A = vandermonde(t, 4) 
+4×4 Array{Float64,2}: 
+1.0 -1.1 1.21 -1.331 
+1.0 -0.4 0.16 -0.064 
+1.0 0.2 0.04 0.008 
+1.0 0.8 0.64 0.512 
+julia> b1 = [ -1.0, 1.3, 1.0, 0.5 ]; 
+julia> c1 = A \ b1 
+4-element Array{Float64,1}: 
+1.21096 
+-0.888311 
+-1.10967 
+1.38648 
+julia> b2 = [ 1.0, 0.0, -2.0, 0 ]; 
+julia> c2 = A \ b2 
+4-element Array{Float64,1}: 
+-1.54129 
+-3.10905 
+3.33847 
+3.69514 
+julia> using Plots 
+julia> ts = linspace(-1.2, 1.2, 1000); 
+julia> p1 = c1[1] .+ c1[2]*ts + c1[3]*ts.^2 + c1[4]*ts.^3; 
+julia> plot(ts, p1) 
+julia> scatter!(t, b1) 
+julia> p2 = c2[1] .+ c2[2]*ts + c2[3]*ts.^2 + c2[4]*ts.^3; 
+julia> plot!(ts, p2) 
+julia> scatter!(t, b2, maker = :square)
+ 
+11.5伪逆矩阵
+在julia中，利用pinv（a）得到矩阵a的伪逆。我们使用pinv函数计算vmls第216页的例子的伪逆，并通过公式a～=r～-1qt，其中a=qr是a的qr因子分解。
+julia> A = [-3 -4; 4 6; 1 1] 
+3×2 Array{Int64,2}: 
+-3 -4 4 
+6 1 1 
+julia> pinv(A) 
+2×3 Array{Float64,2}: 
+-1.22222 -1.11111 1.77778 
+0.777778 0.888889 -1.22222 
+julia> Q, R = qr(A); 
+julia> Q = Matrix(Q) 
+3×2 Array{Float64,2}: 
+-0.588348 -0.457604 0.784465 
+-0.522976 0.196116 0.719092 
+julia> R 
+2×2 Array{Float64,2}: 
+5.09902 7.2563 
+0.0 -0.588348
+julia> R \ Q' # pseudo-inverse from QR factors 
+2×3 Array{Float64,2}: 
+-1.22222 -1.11111 1.77778 
+0.777778 0.888889 -1.22222
+
+第十二章 最小二乘
+12.1最小二乘问题
+julia> A = [ 2 0 ; -1 1 ; 0 2 ] 
+3×2 Array{Int64,2}: 
+2 0 
+-1 1 
+0 2 
+julia> b = [ 1, 0, -1 ] 
+3-element Array{Int64,1}: 
+1 
+0 
+-1 
+julia> xhat = [ 1/3, -1/3 ] 
+2-element Array{Float64,1}: 
+0.333333 
+-0.333333 
+julia> rhat = A*xhat -b 
+3-element Array{Float64,1}: 
+-0.333333 
+-0.666667 
+0.333333 
+julia> norm(rhat) 
+0.816496580927726 
+julia> x = [ 1/2, -1/2 ] 
+2-element Array{Float64,1}: 
+0.5
+-0.5 
+julia> r = A*x -b 
+3-element Array{Float64,1}:
+ 0.0 
+-1.0
+ 0.0 
+julia> norm(r) 1.0
+
+12.2求解
+最小二乘求解公式
+ 
+julia> inv(A'*A)*A'*b 
+2-element Array{Float64,1}: 
+0.333333 
+-0.333333 
+julia> pinv(A)*b 
+2-element Array{Float64,1}: 
+0.333333 -0.333333 
+julia> (A'*A)*xhat - A'*b # Check that normal equations hold 
+2-element Array{Float64,1}: 
+0.0 
+-8.88178e-16
+
+正交性原则。对于同一个例子，让我们检查正交性原理（12.9）。
+julia> z = [-1.1, 2.3]; 
+julia> (A*z)'*rhat 
+2.220446049250313e-16 
+julia> z = [5.3, -1.2];
+julia> (A*z)'*rhat 
+-6.661338147750939e-16
+
+12.3解最小二乘问题
+Julia使用反斜杠算子表示最小二乘近似解：xhat= A\b（同样的算子用于求解线性方程组的平方，我们将在后面的章节中看到更多的用法）。
+julia> A = randn(100,20); 
+b = randn(100); 
+julia> x1 = A\b; # Least squares using backslash operator 
+julia> x2 = inv(A'*A)*(A'*b); # Using formula 
+julia> x3 = pinv(A)*b; # Using pseudo-inverse 
+julia> Q, R = qr(A); 
+julia> Q = Matrix(Q); 
+julia> x4 = R\(Q'*b); # Using QR factorization 
+julia> norm(x1-x2) 
+4.258136640215341e-16 
+julia> norm(x2-x3) 
+1.3328728382991758e-15 
+julia> norm(x3-x4) 
+1.3507615689695538e-15
+复杂性。m×n矩阵A求解最小二乘问题的复杂度约为2Mn2°OPS。让我们在julia中通过求解不同维度的最小二乘问题来验证这一点
+julia> m = 2000; n = 500; 
+julia> A = randn(m,n); b = randn(m); 
+julia> @time x = A\b; 
+0.190497 seconds (4.07 k allocations: 12.031 MiB, 28.89% gc time) 
+julia> @time x = A\b; 
+0.120246 seconds (4.07 k allocations: 12.031 MiB) 
+julia> m = 4000; n = 500; 
+julia> A = randn(m,n); b = randn(m); 
+julia> @time x = A\b; 
+0.248510 seconds (4.07 k allocations: 19.675 MiB) 
+julia> m = 2000; n = 1000; 
+julia> A = randn(m,n); b = randn(m); 
+julia> @time x = A\b; 
+0.418181 seconds (8.07 k allocations: 31.608 MiB, 1.66% gc time)
+我们可以看到，加倍M大约翻倍的计算时间，加倍N增加约四倍。上面的时间可以用来猜测执行它的计算机的速度。例如，使用最后一个解决的问题，fli的数量大约为2mn2=4·109，大约需要0.4秒。这表明速度约为10 g flop/sec。
+
+矩阵最小二乘法。让我们用相同的矩阵A和不同的向量B来求解多个最小二乘问题。
+julia> A = randn(1000,100); B = randn(1000,10); 
+julia> X = A\B; 
+julia> # Check that third column of X is least squares solution 
+julia> # with third column of B 
+julia> x3 = A\B[:,3]; 
+julia> norm(X[:,3]-x3) 
+1.1037090583270415e-16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第13章 最小二乘拟合
+13.1 最小二乘数值拟合
+
+原理:
+Y=kx+b
+X为下标，b=x1时方程变成：5个已知数为例：
+[█(■(1&1@1&2@1&3)@■(1&4@1&5))]?[■(b@k)]=[■(x_1@x_2@■(x_3@x_4@x_5 ))]
+using VMLS# Petroleum consumption in thousand barrels/day 
+ consumption = petroleum_consumption_data() 
+ n = length(consumption); 
+ A = [ ones(n) 1:n ]; 
+ x = A \ consumption; 
+ #using Plots 
+ Plots.scatter(1980:2013, consumption, legend=false)
+ plot!(1980:2013, A*x)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+静校正是地震资料处理中的一个基本环节。高程静校正是指将起伏地表上的炮点和接收点校正至水平基准面，一般要通过基准面高程、低速带速度等参数来计算静校正量。在没有高程数据、低速带速度情况下，可采用一些近似算法，比如，在地形背景高差不大（无低频分量），只存在局部点的高差（高频分量）、地层基本为水平层状的情况下，可采用初至拟合的办法，依据是直达波或者一次折射波的初至校正后应为一条之前（当然判断静校正好坏不能以初至是否直线为依据）。基本操作流程是拾取单炮初至，将直达波你和成一条直线，然后计算静校正量。
+附件“初至.csv”文件有48道地震记录初至，请利用最小二乘原理，将其拟合成一条直线，然后计算每道记录的静校正量（拟合值-拾取值）。拟合时x坐标可直接按道号处理（实际应按x坐标）。
+原理:
+Y=kx+b
+[■(X ?&I ? )]*[■(K ?@B ? )]=[Y ? ]
+X为下标，b=x1时方程变成：5个已知数为例：
+[█(■(1&1@1&2@1&3)@■(1&4@1&5))]?[■(b@k)]=[■(x_1@x_2@■(x_3@x_4@x_5 ))]
+using VMLS # Petroleum consumption in thousand barrels/day 
+ consumption = petroleum_consumption_data() 
+ n = length(consumption); 
+ A = [ ones(n) 1:n ]; 
+ x = A \ consumption; 
+ #using Plots 
+ Plots.scatter(1980:2013, consumption, legend=false)
+ plot!(1980:2013, A*x)
+
+
+作业代码
+using DelimitedFiles
+t = readdlm("E:\\JuliaStudy\\初至.txt",'\t',skipstart=1)# 数据之间用英文逗号隔开，注意readdlm中是单引号
+# a = readdlm("123.txt")  # 读取用空格分割的数据
+println(a)
+for i in 1:size(a,1)
+    println(t[i,1]," ",t[i,2])
+    # println(a[i,:])
+end
+# println("======================================")
+ n =size(a,1);
+ A = [ ones(n) 1:n ];
+ x = A \ t[:,2];
+ #using Plots
+ Plots.scatter(a[:,1], t[:,2], legend=false)
+ Plots.plot!(a[:,1], A*x)
+
+
+
+
+
+
+
+
+FFT演示
+17.1 FFT知识复习
+FFT变换是针对一组数值进行运算的，这组数的长度N必须是2的整数次幂，例如64, 128, 256等等； 数值可以是实数也可以是复数，通常我们的时域信号都是实数，因此下面都以实数为例。我们可以把 这一组实数想像成对某个连续信号按照一定取样周期进行取样而得来，如果对这组N个实数值进行FFT 变换，将得到一个有N个复数的数组，我们称此复数数组为频域信号，此复数数组符合如下规律：
+? 下标为0和N/2的两个复数的虚数部分为0，
+? 下标为i和N-i的两个复数共轭，也就是其虚数部分数值相同、符号相反。
+下面的例子演示了这一个规律，先以rand随机产生有8个元素的实数数组x，然后用fft对其运算之后， 观察其结果为8个复数，并且满足上面两个条件：
+julia>using FFTW
+julia> x=rand(8)
+8-element Array{Float64,1}:
+ 0.7262696019356198
+ 0.654398605080158
+ 0.15197415735024644
+ 0.9425821220909789
+ 0.35226190851661987
+ 0.6346742300401538
+ 0.7969523944947432
+ 0.22350497622032228
+
+julia> xf=ifft(x)
+8-element Array{Complex{Float64},1}:
+   0.5603272494661053 + 0.0im
+ -0.01506367415961949 - 0.015320833969704198im
+  0.01620061982590626 + 0.015373217101126324im
+  0.10856559751436948 + 0.14592372531642im
+ -0.05346273389179795 + 0.0im
+  0.10856559751436948 - 0.14592372531642im
+  0.01620061982590626 - 0.015373217101126324im
+ -0.01506367415961949 + 0.015320833969704198im
+FFT变换的结果可以通过IFFT变换（逆FFT变换）还原为原来的值：
+julia> ifft(xf)
+8-element Array{Complex{Float64},1}:
+  0.0907837002419525 + 0.0im
+ 0.02793812202754028 + 0.0im
+ 0.09961904931184291 + 0.0im
+ 0.07933427875501922 + 0.0im
+  0.0440327385645775 + 0.0im
+ 0.11782276526137236 + 0.0im
+ 0.01899676966878082 + 0.0im
+ 0.08179982563501975 + 0.0im
+注意ifft的运算结果实际上是和x相同的，由于浮点数的运算误差，出现了一些非常小的虚数部分。
+FFT变换和IFFT变换并没有增加或者减少信号的数量，如果你仔细数一下的话，x中有8个实数数值，而 xf中其实也只有8个有效的值。
+计算FFT结果中的有用的数值 由于虚数部共轭和虚数部为0等规律，真正有用的信息保存在下标从0到N/2的N/2+1个虚数中， 又由于下标为0和N/2的值虚数部分为0，因此只有N个有效的实数值。
+下面让我们来看看FFT变换之后的那些复数都代表什么意思。
+? 首先下标为0的实数表示了时域信号中的直流成分的多少
+? 下标为i的复数a+b*j表示时域信号中周期为N/i个取样值的正弦波和余弦波的成分的多少， 其中a 表示cos波形的成分，b表示sin波形的成分
+让我们通过几个例子来说明一下，下面是对一个直流信号进行FFT变换：
+julia> x=ones(8)
+8-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+julia> fft(x)/length(x)
+8-element Array{Complex{Float64},1}:
+ 1.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+ 0.0 + 0.0im
+所谓直流信号，就是其值不随时间变化，因此我们创建一个值全为1的数组x，我们看到它的FFT结果除 了下标为0的数值不为0以外，其余的都为0。(为了计算各个成分的能量多少，需要将FFT的结果除以 FFT的长度)，这表示我们的时域信号是直流的，并且其成分为1。
+下面我们产生一个周期为8个取样的正弦波，然后观察其FFT的结果：
+julia> x=collect(Float32,0:1:8).*2pi/9.0;
+
+julia> y=sin.(x);
+
+julia> fft(y)/length(y)
+9-element Array{Complex{Float64},1}:
+                     0.0 + 0.0im
+  -6.167905692361981e-17 - 0.5im
+ -1.5419764230904953e-17 - 2.4671622769447922e-17im
+   3.700743415417188e-17 - 2.1366252070928486e-17im
+   3.370206345565245e-17 + 2.4671622769447922e-17im
+   3.370206345565245e-17 - 2.4671622769447922e-17im
+   3.700743415417188e-17 + 2.1366252070928486e-17im
+ -1.5419764230904953e-17 + 2.4671622769447922e-17im
+  -6.167905692361981e-17 + 0.5im
+注意：
+要计算周期为8个取样的正弦波，就需要把0-2*pi的区间等分为8份，则应该是9个间隔，所以x=collect(Float32,0:1:8).*2pi/9.0；
+julia> x=collect(Float32,0:1:8).*2pi/9
+9-element Array{Float64,1}:
+ 0.0
+ 0.6981317007977318
+ 1.3962634015954636
+ 2.0943951023931953
+ 2.792526803190927
+ 3.490658503988659
+ 4.1887902047863905
+ 4.886921905584122
+ 5.585053606381854
+让我们再来看看对正弦波的FFT的计算结果吧。可以看到下标为2的复数的虚数部分为-0.5，而我们产 生的正弦波的放大系数(振幅)为1，它们之间的关系是-0.5*（-2）=1。再来看一下余弦波形:
+julia> fft(cos.(x))/length(x)
+9-element Array{Complex{Float64},1}:
+  -8.635067969306773e-17 + 0.0im
+                     0.5 - 1.3811362452112924e-16im
+  3.0839528461809905e-17 + 1.475551067388962e-17im
+  6.1679056923619804e-18 + 1.0683126035464243e-17im
+ -2.1366252070928486e-17 - 2.709132205861358e-17im
+ -2.1366252070928486e-17 + 2.709132205861358e-17im
+  6.1679056923619804e-18 - 1.0683126035464243e-17im
+  3.0839528461809905e-17 - 1.475551067388962e-17im
+                     0.5 + 1.3811362452112924e-16im
+只有下标为2的复数的实数部分有有效数值0.5，和余弦波的放大系数1之间的关系是0.5*2=1。再来看 2个例子：
+julia> fft(2*sin.(2x))/length(x)
+9-element Array{Complex{Float64},1}:
+  2.220446049250313e-16 + 0.0im
+ 2.4671622769447922e-17 + 1.9737298215558337e-16im
+  -3.20731096002823e-16 - 1.0im
+ 1.1102230246251565e-16 - 1.0683126035464243e-16im
+  9.030440686204524e-17 - 4.9343245538895844e-17im
+  9.030440686204524e-17 + 4.9343245538895844e-17im
+ 1.1102230246251565e-16 + 1.0683126035464243e-16im
+  -3.20731096002823e-16 + 1.0im
+ 2.4671622769447922e-17 - 1.9737298215558337e-16im
+
+julia> fft(0.8*cos.(2x))/length(x)
+9-element Array{Complex{Float64},1}:
+ -5.2427198385076835e-17 + 0.0im
+ -2.4671622769447922e-17 + 6.613494853199815e-17im
+                     0.4 - 1.8949306237923776e-16im
+    6.32210333467103e-17 + 2.6707815088660607e-18im
+                     0.0 + 2.8360500437920326e-17im
+                     0.0 - 2.8360500437920326e-17im
+    6.32210333467103e-17 - 2.6707815088660607e-18im
+                     0.4 + 1.8949306237923776e-16im
+ -2.4671622769447922e-17 - 6.613494853199815e-17im
+上面产生的是周期为4个取样(N/2)的正弦和余弦信号，其FFT的有效成分在下标为3的复数中，其中正 弦波的放大系数为2,因此频域虚数部分的值为-1；余弦波的放大系数为0.8，因此其对应的值为0.4。
+同频率的正弦波和余弦波通过不同的系数叠加，可以产生同频率的各种相位的余弦波，因此我们可以 这样来理解频域中的复数:
+? 复数的模（绝对值）代表了此频率的余弦波的振幅
+? 复数的辐角代表了此频率的余弦波的相位
+让我们来看最后一个例子：
+julia> x=collect(Float32,0:1:128).*2pi/129.0;
+julia> y=0.3*cos.(x).+ 0.5*cos.(2x.+pi/4).+0.8*cos.(3x.-pi/3);
+julia> yf=fft(y)/length(y);
+julia> yf[1:4]
+4-element Array{Complex{Float64},1}:
+ 3.7868072157757277e-17 + 0.0im
+    0.15000000000000005 - 7.10026352957949e-18im
+    0.17677669529663692 + 0.17677669529663695im
+    0.19999999999999987 - 0.3464101615137755im
+julia> angle(yf[2])
+-4.733509019719658e-17
+julia> abs(yf[2]),rad2deg(angle(yf[2]))
+(0.15000000000000005, -2.71210089117044e-15)
+julia> abs(yf[3]),rad2deg(angle(yf[3]))
+(0.25000000000000006, 45.00000000000001)
+julia> abs(yf[4]),rad2deg(angle(yf[4]))
+(0.39999999999999997, -60.00000000000002)
+在这个例子中我们产生了三个不同频率的余弦波，并且给他们不同的振幅和相位：
+? 周期为128/1.0点的余弦波的相位为0， 振幅为0.3
+? 周期为64/2.0点的余弦波的相位为45度， 振幅为0.5
+? 周期为128/3.0点的余弦波的相位为-60度，振幅为0.8
+对照yf[2], yf[3], yf[4]的复数振幅和辐角，我想你应该对FFT结果中的每个数值所表示的意思有很清楚 的理解了吧。
+
+频域信号处理
+用FFT(快速傅立叶变换)能将时域的数字信号转换为频域信号。转换为频域信号之后我们可以很方便地 分析出信号的频率成分，在频域上进行处理，最终还可以将处理完毕的频域信号通过IFFT(逆变换)转换 为时域信号，实现许多在时域无法完成的信号处理算法。本章通过几个实例，简单地介绍有关频域信 号处理的一些基本知识。
+18.1 观察信号的频谱
+将时域信号通过FFT转换为频域信号之后，将其各个频率分量的幅值绘制成图，可以很直观地观察信号 的频谱。下面的程序完成这一任务：
+# -*- coding: utf-8 -* 
+using FFTW
+using PyPlot
+using PyCall
+sampling_rate = 8000
+fft_size = 512
+t = range(0;stop=1.0, step=1.0/sampling_rate)
+x = sin.(2*pi*156.25.*t) + 2*sin.(2*pi*234.375.*t)
+xs = x[1:fft_size]
+xf = fft(xs)/fft_size
+freqs = collect((0:fft_size/2.0)).*(sampling_rate/2.0/(fft_size/2))
+#freqs = np.linspace(0, sampling_rate/2, fft_size/2+1)
+xfp = 20*log10.(abs.(xf))
+figure(figsize=(8,4))
+subplot(211)
+PyPlot.plot(t[1:fft_size], xs) 
+
+xlabel("Time(s)")
+title("156.25Hz&234.375Hz wave and Freqs")
+subplot(212)
+PyPlot.plot(freqs, xfp[1:Int32(fft_size/2+1)])
+xlabel("Freq(Hz)")
+subplots_adjust(hspace=0.4)
+show()
+
+下面逐行对这个程序进行解释：
+首先定义了两个常数：sampling_rate, fft_size，分别表示数字信号的取样频率和FFT的长度。
+然后调用range产生1秒钟的取样时间，t中的每个数值直接表示取样点的时间，因此其间隔为取样 周期1/sampline_rate：
+t = range(0;stop=1.0, step=1.0/sampling_rate)
+用取样时间数组t可以很方便地调用函数计算出波形数据，这里计算的是两个正弦波的叠加，一个频率 是156.25Hz，一个是234.375Hz：
+x = sin.(2*pi*156.25.*t) + 2*sin.(2*pi*234.375.*t)
+为什么选择这两个奇怪的频率呢？因为这两个频率的正弦波在512个取样点中正好有整数个周期。满足 这个条件波形的FFT结果能够精确地反映其频谱。
+N点FFT能精确计算的频率 假设取样频率为fs, 取波形中的N个数据进行FFT变换。那么这N点数据包含整数个周期的波形时， FFT所计算的结果是精确的。于是能精确计算的波形的周期是: n*fs/N。对于8kHz取样，512点 FFT来说，8000/512.0 = 15.625Hz，前面的156.25Hz和234.375Hz正好是其10倍和15倍。
+
+下面从波形数据x中截取fft_size个点进行fft计算。FFTW库中提供了一个fft函数，它方便我们对实数信号进行FFT计算。根据FFT计算公式，为了正确显示波形能量，还需要将fft函数的结果除以 fft_size：
+xs = x[1:fft_size]
+xf = fft(xs)/fft_size
+fft函数的返回值是N/2+1个复数，分别表示从0(Hz)到sampling_rate/2(Hz)的N/2+1点频率的成分。于是可以通过下面的语句计算出返回值中每个下标对应的真正的频率：
+freqs = collect((0:fft_size/2.0)).*(sampling_rate/2.0/(fft_size/2))
+最后我们计算每个频率分量的幅值，并通过 20*np.log10() 将其转换为以db单位的值。为了防止0幅 值的成分造成log10无法计算，还应对xf的幅值进行上下限处理，这里没有处理。
+剩下的程序就是将时域波形和频域波形绘制出来，这里就不再详细叙述了。此程序的输出为：
+ 
+使用FFT计算正弦波的频谱
+如果你放大其频谱中的两个峰值的部分的话，可以看到其值分别为：
+julia> xfp[11]
+-6.02059991327962
+julia> xfp[16]
+1.928654933106574e-15
+即156.25Hz的成分为-6dB， 而234.375Hz的成分为0dB，与波形的计算公式中的各个分量的能量(振 幅值/2)符合。
+如果我们波形不能在fft_size个取样中形成整数个周期的话会怎样呢？
+将波形计算公式修改为：
+ 
+非完整周期的正弦波经过FFT变换之后出现频谱泄漏
+
+
+频谱泄漏的解释 我们只能在有限的时间段中对信号进行测量，无法知道在测量范围之外的信号是怎样的。因此只 能对测量范围之外的信号进行假设。而傅立叶变换的假设很简单：测量范围之外的信号是所测量 到的信号的重复。 现在考虑512点FFT，从信号中取出的512个数据就是FFT的测量范围，它计算的是这512个数据一 直重复的波形的频谱。显然如果512个数据包含整数个周期的话，那么得到的结果就是原始信号 的频谱，而如果不是整数周期的话，得到的频谱就是如下波形的频谱，这里假设对50Hz的正弦波 进行512点FFT：
+using FFTW
+using PyPlot
+t = range(0,stop=1.0,step=1.0/8000)
+x=sin.(2*pi*50*t)[1:512]
+PyPlot.plot([x;x;x])
+show()
+ 
+50Hz正弦波的512点FFT所计算的实际波
+18.1.1 窗函数
+为了减少FFT所截取的数据段前后的跳变，可以对数据先乘以一个窗函数，使得其前后数据能平滑过 渡。例如常用的hann窗函数的定义如下：
+ 
+其中N为窗函数的点数，下面是一个512点hann窗的曲线：
+using DSP
+using PyPlot
+figure(figsize=(8,3))
+PyPlot.plot(hanning(512))
+show()
+ 
+窗函数都在DSP库中定义，它们的第一个参数为点数N。可以看出hann窗函数是完全对称的， 也就是说第1点和第512点的值完全相同，都为0。在这样的函数和信号数据相乘的话，结果中会出现 前后两个连续的0，这样FFT的结果所表示的周期信号中有两个连续的0值，会对信号的周期性有一定的 影响。
+计算周期信号的一个周期的数据 
+考虑对一个正弦波取样10个点，那么第一个点的值为0，而最后一个点的值不应该是0，这样这10 个数据的重复才能是精确的正弦波，下面的两种计算中，前者是正确的：也就是说最后一个点不是0.
+julia> sin.(range(0,step=2pi/10,length=10))
+10-element Array{Float64,1}:
+  0.0
+  0.5877852522924731
+  0.9510565162951535
+  0.9510565162951536
+  0.5877852522924732
+  1.2246467991473532e-16
+ -0.587785252292473
+ -0.9510565162951535
+ -0.9510565162951536
+ -0.5877852522924734
+julia> sin.(range(0,stop=2pi,length=10))
+10-element Array{Float64,1}:
+  0.0
+  0.6427876096865393
+  0.984807753012208
+  0.8660254037844387
+  0.3420201433256689
+ -0.34202014332566866
+ -0.8660254037844385
+ -0.9848077530122081
+ -0.6427876096865396
+ -2.4492935982947064e-16
+为了解决连续0值的问题，构建hanning函数需要注意，去8个点的汉明周期信号，应采用后者：
+julia> hanning(8)
+8-element Array{Float64,1}:
+ 0.0
+ 0.18825509907063326
+ 0.6112604669781572
+ 0.9504844339512095
+ 0.9504844339512095
+ 0.6112604669781572
+ 0.18825509907063326
+ 0.0
+julia> hanning(9)[1:8]
+8-element Array{Float64,1}:
+ 0.0
+ 0.14644660940672627
+ 0.5
+ 0.8535533905932737
+ 1.0
+ 0.8535533905932737
+ 0.5
+ 0.14644660940672627
+
+50Hz正弦波与窗函数乘积之后的重复波形如下：
+using DSP
+using PyPlot
+figure(figsize=(8,3))
+t = range(0,stop=1.0,step=1.0/8000)
+x = sin.(2pi*50 .*t)[1:512] .* hanning(513)[1:512]
+PyPlot.plot([x;x;x])
+show()
+ 
+加hann窗的50Hz正弦波的512点FFT所计算的实际波形
+回到前面的例子，将200Hz, 300Hz的叠加波形与hann窗乘积之后再计算其频谱，得到如下频谱图：
+ 
+加hann窗前后的频谱，hann窗能降低频谱泄漏
+实现代码如下：
+# -*- coding: utf-8 -
+using FFTW
+using PyPlot
+using PyCall
+using DSP
+sampling_rate = 8000
+fft_size = 512
+t = range(0;stop=1.0, step=1.0/sampling_rate)
+#x = sin.(2*pi*156.25.*t) + 2*sin.(2*pi*234.375.*t)
+x = sin.(2*pi*200.0 .*t) + 2*sin.(2*pi*300.0 .*t)
+xs = x[1:fft_size]
+ys = xs.*hamming(fft_size+1)[1:fft_size]
+xf = fft(xs)/fft_size
+yf = fft(ys)/fft_size
+freqs = collect((0:fft_size/2.0)).*(sampling_rate/2.0/(fft_size/2))
+#freqs = linspace(0, sampling_rate/2, fft_size/2+1)
+xfp = 20*log10.(abs.(xf))
+yfp = 20*log10.(abs.(yf))
+figure(figsize=(8,4))
+title("200Hz&300Hz wave and Freqs")
+PyPlot.plot(freqs, xfp[1:Int32(fft_size/2+1)],label="Rectange win")
+PyPlot.plot(freqs, yfp[1:Int32(fft_size/2+1)],label="hanning win")
+legend()
+ xlabel("Freq(Hz)")
+a=PyPlot.axes([.4, .2, .4, .4])
+a.plot(freqs, xfp[1:Int32(fft_size/2+1)],label="Rectange win")
+a.plot(freqs, yfp[1:Int32(fft_size/2+1)],label="hanning win")
+a.set_xlim(100, 400)
+a.set_ylim(-40, 0)
+show()
+
+18.1.2 频谱平均
+对于频谱特性不随时间变化的信号，例如引擎、压缩机等机器噪声，可以对其进行长时间的采样，然 后分段进行FFT计算，最后对每个频率分量的幅值求其平均值可以准确地测量信号的频谱。
+下面的程序完成这一计算：
+using DSP
+using FFTW
+using Statistics
+using PyPlot
+using PyCall
+pygui(true)
+function average_fft(x, fft_size)
+    n = length(x) ÷ fft_size * fft_size 
+    tmp = reshape(x[1:n],:, fft_size) 
+    for i = 1:size(tmp,1)
+        tmp[i,:]  .*= (hanning(fft_size+1)[1:fft_size])
+    end
+   xf = abs.(fft(tmp,2)/fft_size) 
+   avgf = mean(xf,dims=1)
+   return 20*log10.(avgf)
+ end
+average_fft(x, fft_size)对数组x进行fft_size点FFT运算，以dB为单位返回其平均后的幅值。由于x的长 度可能不是fft_size的整数倍，因此首先将其缩短为fft_size的整数倍，然后用reshape函数将其转换为 一个二维数组tmp。tmp的第1轴的长度为fft_size：
+n = len(x) ÷ fft_size * fft_size 
+tmp = reshape(x[1:n],:, fft_size) 
+然后将tmp的第1轴上的数据和窗函数相乘，这里选用的是hann窗：
+for i = 1:size(tmp,1)
+        tmp[i,:]  .*= (hanning(fft_size+1)[1:fft_size])
+    end
+调用fft对tmp每的行数据进行FFT计算，并求其幅值：
+xf = abs.(fft(tmp,2)/fft_size) 
+接下来调用average函数对xf沿着第0轴进行平均，这样就得到每个频率分量的平均幅值：
+avgf = mean(xf,dims=1)
+下面是利用averagge_fft函数计算随机数序列频谱的例子：
+# using PyPlot
+x = rand(100000) .-0.5
+xf = average_fft(x,512)
+plot(xf[1,1:256];color="red")
+show()
+ 
+白色噪声的频谱接近水平直线(注意Y轴的范围)
+我们可以看到随机噪声的频谱接近一条水平的直线，也就是说每个频率窗口的能量都相同，这种噪声我们称之为白色噪声。
+缺低通滤波器
+
+18.2 快速卷积
+我们知道，信号x经过系统h之后的输出y是x和h的卷积，虽然卷积的计算方法很简单，但是当x和h都很长的时候，卷积计算是非常耗费时间的。因此对于比较长的系统h，需要找到比直接计算卷积更快的方法。
+信号系统理论中有这样一个规律：时域的卷积等于频域的乘积，因此要计算时域的卷积，可以将时域信号转换为频域信号，进行乘积运算之后再将结果转换为时域信号，实现快速卷积。
+由于FFT运算可以高效地将时域信号转换为频域信号，其运算的复杂度为O(N*log(N))，因此三次FFT运算加一次乘积运算的总复杂度仍然为 O(N*log(N)) 级别，而卷积运算的复杂度为 O(N*N)，显然通过FFT计算卷积要比直接计算快速得多。这里假设需要卷积的两个信号的长度都为N。但是有一个问题：FFT运算假设其所计算的信号为周期信号，因此通过上述方法计算出的结果实际上是两个信号的循环卷积，而不是线性卷积。为了用FFT计算线性卷积，需要对信号进行补零扩展，使得其长度长于线性卷积结果的长度。
+例如，如果我们要计算数组a和b的卷积，a和b的长度都为128，那么它们的卷积结果的长度为 len(a)+ len(b) - 1 = 257。为了用FFT能够计算其线性卷积，需要将a和b都扩展到256。下面的程序演示这个计算过程：
+using FFTW
+using DSP
+using PyPlot
+function fft_convolve(a,b)
+    n = length(a)+length(b)-1
+    N = Int32(2^(ceil(log2(n))))
+    A = [a;zeros(N-length(a))]
+    B = [b;zeros(N-length(b))]
+    A = fft(A)
+    B = fft(B)
+    C = real.(ifft(A.*B)[1:n])
+end 
+a = rand(128)
+b = rand(128)
+c = conv(a,b)
+d = fft_convolve(a,b)
+print(sum(abs.(c - d)))
+此程序的输出为直接卷积和FFT快速卷积的结果之间的误差，大约为5e-12左右。
+8.526512829121202e-13
+在这段程序中，a,b的长度为128，其卷积结果c的长度为n=255，我们通过下面的算式找到大于n的最小的2的整数次幂：
+N = Int32(2^(ceil(log2(n))))
+在调用fft函数对其进行变换时，传递第二个参数为N(FFT的长度)，这样fft函数将自动对a,b进行补零。
+最后通过ifft得到的卷积结果c2的长度为N，比实际的卷积结果c要多出一个数，这个多出来的元素应该接近于0，请读者自行验证。
+下面测试一下速度，DSP包里的conv函数你看一下帮助文档会发现Convolution of two arrays. Uses FFT algorithm.用的也是FFT算法，因此，两者的时间应该差不多：
+a = rand(10000)
+b = rand(10000)
+julia> @time fft_convolve(a,b)
+  0.000769 seconds (181 allocations: 47.484 KiB)
+julia> @time conv(a,b)
+  0.001762 seconds (137 allocations: 16.359 KiB)
+似乎fft_convolve的速度比DSP包中的conv速度还要快，读者可自行测试。
+上述测试单元在Python中利用numpy测试的时间如下：
+>>> import timeit
+>>> setup="""import numpy as np
+a=np.random.rand(10000)
+b=np.random.rand(10000)
+from spectrum_fft_convolve import fft_convolve"""
+>>> timeit.timeit("np.convolve(a,b)",setup, number=10)
+1.852900578146091
+>>> timeit.timeit("fft_convolve(a,b)",setup, number=10)
+0.19475575806416145
+18.2.1 分段运算
+现在考虑对于输入信号x和系统响应h的卷积运算，通常x是非常长的，例如要对某段录音进行滤波处理，假设取样频率为8kHz，录音长度为1分钟的话，那么x的长度为480000。而且x的长度也可能不是固定的，例如我们可能需要对麦克风的连续输入信号进行滤波处理。而h的长度通常都是固定的，例如它是某个房间的冲击响应，或者是某种FIR滤波器。
+根据前面的介绍，为了有效地利用FFT计算卷积，我们希望它的两个输入长度相当，于是就需要对信号x进行分段处理。对卷积的分段运算被称作：overlap-add运算。
+overlap-add的计算方法如下图所示：
+ 
+图 18.** - 分段卷积的过程演示
+原始信号x长度为300，将它分为三段，分别与滤波器系数h进行卷积计算，h的长度为101，因此每段
+输出200个数据，图中用绿色标出每段输出的200个数据。这3段数据按照时间顺序进行求和之后得到结果和原始信号的卷积是相同的。
+因此将持续的输入信号x和滤波器h进行卷积的运算可以按照如下步骤进行，假设h的长度为M：
+1. 建立一个缓存，其大小为N+M-1，初始值为0
+2. 每次从x中读取N个数据，和h进行卷积，得到N+M-1个数据，和缓存中的数据进行求和，并放进缓存中，然后输出缓存前N个数据
+3. 将缓存中的数据向左移动N个元素，也就是让缓存中的第N个元素成为第0个元素，后面的N个元素全部设置为0
+4. 跳转到2重复运行
+下面是实现这一算法的演示程序：
+未调试通，还需修改
+sing DSP
+x = rand(1000)
+h = rand(101)
+y = conv(x, h)
+
+N = 50 # 分段大小
+M = length(h) # 滤波器长度
+
+output = []
+
+#缓存初始化为0
+buffer = zeros(Float64,M+N-1)
+#
+ for i in range(1,stop=Int32(length(x)/N))
+    #从输入信号中读取N个数据
+    xslice = x[(i-1)*N+1:i*N]
+    #计算卷积
+    yslice = conv(xslice, h)
+    #将卷积的结果加入到缓冲中
+    global buffer += yslice
+    #输出缓存中的前N个数据，注意使用copy，否则输出的是buffer的一个视图
+    append!(output,buffer[1:N])
+    #缓存中的数据左移动N个元素
+    buffer[1:M] = buffer[N:end]
+     #后面的补0
+    buffer[M:end] .= 0
+end
+#  #将输出的数据组合为数组
+ y2 = hcat(output)
+# #计算和直接卷积的结果之间的误差
+print(sum(abs.( y2 .- y[1:length(x)] ) ))
+注意第23行需要输出缓存前N个数据的拷贝，否则输出的是数组的一个视图，当此后buffer更新时，视图中的数据会一起更新。
+将FFT快速卷积和overlap-add相结合，可以制作出一些快速的实时数据滤波算法。但是由于FFT卷积对于两个长度相当的数组时最为有效，因此在分段时也会有所限制：例如如果滤波器的长度为2048，那么理想的分段长度也为2048，如果将分段长度设置得过低，反而会增加运算量。因此在实时性要求很强的系统中，只能采用直接卷积。
+
+
+
+Hilbert变换
+对于一个实信号x(t)，其希尔伯特变换为：
+x ?=x(t)*1/πt
+式中*表示卷积运算。
+Hilbert本质上也是转向器，对应频域变换为：
+1/πt?j?sign(ω)
+即余弦信号的Hilbert变换是正弦信号，又有：
+1/πt*1/πt?j?sign(ω)?j?sign(ω)=-1
+即信号两次Hilbert变换后是其自身相反数，因此正弦信号的Hilbert是负的余弦。
+对应解析信号为：
+z(t)=x(t)+jx ?(t)
+此操作实现了信号由双边谱到单边谱的转化。
+Hilbert变换能在振幅保持不变的情况下将输入信号的相角偏移90度，简单地说就是能将正弦波形转换为余弦波形，下面的程序验证这一特性：
+using DSP
+using PyPlot
+pygui(true)
+# 产生1024点4个周期的正弦波
+t=collect(Float32,0:1:1024).*8pi/1025.0;
+#t = np.linspace(0, 8*np.pi, 1024, endpoint=False)
+x = cos.(t)
+# 进行Hilbert变换
+y = hilbert(x)
+#y = hilbert(y)
+plot(x, label="raw Wave")
+plot(imag.(y), label="Hilbert wave")
+legend()
+show()
+关于程序的几点说明：
+? hilbert转换函数在DSP函数库中
+? 为了生成完美的正弦波，需要计算整数个周期，因此调用ollect(Float32,0:1:1024).*8pi/1025.0;，这样就不会包括区间的结束点：8*np.pi
+此程序的输出图表如下，我们可以很清楚地看出hilbert将正弦波变换为了负的余弦波形。
+ 
+Hilbert变换将正弦波变为负余弦波
+Hilbert正变换的相角偏移符号，本书中将相角偏移-90度成为Hilbert正变换。有的文献书籍正好将定义倒转过来：将偏移-90度成为Hilbert负变换，而偏移+90度成为Hilbert正变换。
+相角偏移90度相当于复数平面上的点与虚数单位1j相乘，因此Hilbert变换的频率响应可以用如下公式给出：
+H(ω) = j·sgn(ω)
+其中 ω 为圆频率，sgn函数为符号函数，即：
+?sgn(ω)=■({■(1，for ω>0@0,for ω=0@-1,for ω<0)┤&)
+?
+?我们可以将其频率响应理解为：
+? 直流分量为0
+? 正频率成分偏移+90度
+? 负频率成分偏移-90度
+由于对于实数信号来说，正负频率成分共轭，因此对实数信号进行Hilbert变换之后仍然是实数信号。
+下面的程序验证Hilbert变换的频率响应：
+julia> x=rand(16)
+julia> y=imag.(hilbert(x))
+julia> X=fft(x)
+julia> Y=fft(y)
+julia> show(imag.(Y./X))
+[0.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 
+0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+对信号进行N点FFT变换之后：
+? 下标为0的频率分量表示直流分量
+? 下标为N/2的的频率分量为取样频率/2的频率分量
+? 1到N/2-1为正频率分量
+? N/2+1到N为负频率分量
+对照Y/X的虚数部分，不难看出它是符合Hilbert的频率响应的。如果你用np.real(Y/X)观察实数部分的话，它们全部接近于0。
+Hilbert变换可以用作包络检波。具体算法如下所示：
+envelope=√(〖H(x)〗^2+x^2 )
+其中x为原始载波波形，H(x)为x的Hilbert变换之后的波形，envelope为信号x的包络。其原理很容易
+理解：假设x为正弦波，那么H(x)为余弦波，根据公式：
+sin2(t) + cos2(t) = 1
+可知envelope恒等于1，为sin(t)信号的包络。下面的程序验证这一算法：
+using DSP
+using GR
+
+t = range(0,stop=0.3,step=1/20000.0)
+x = sin.(2pi*1000 .*t).*(sin.(2pi*10 .* t) .+ sin.(2*pi*7 .*t).+3.0)
+hx = -imag.(hilbert(x))
+plot(x, label="carrier signal")
+plot(sqrt.(x.^2 + hx.^2), "r", linewidth=2, label="Detected envelope signal")
+title("Envelope detection using Hilbert transform")
+legend()
+show()
+
+
+
+
+ 
+前面介绍过可以使用频率扫描波形测量滤波器的频率响应，我们可以使用这个算法计算出扫描波的包络：
+>>> run filter_lfilter_example01.py # 运行滤波器的例子
+>>> hy = fftpack.hilbert(y)
+>>> pl.plot( np.sqrt(y**2 + hy**2),"r", linewidth=2)
+>>> pl.plot(y)
+>>> pl.title(u"频率扫描波的包络")
+>>> pl.show()
+得到的包络波形如下图所示：
+ 
+可以看出在高频和低频处包络计算出现较大的误差。而在中频部分能很好地计算出包络的形状。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
